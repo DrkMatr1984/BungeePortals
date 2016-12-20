@@ -47,7 +47,7 @@ public class CommandBPortals implements CommandExecutor {
                 blocks = select(player, ((args.length >= 3) ? args[2] : null));
                 if (blocks != null) {
                     for (String block : blocks) {
-                        plugin.portalData.put(block, args[1]);
+                        plugin.getPortalData().put(block, args[1]);
                     }
                     player.sendMessage(ChatColor.GREEN + "" + blocks.size() + " portals have been created.");
                     plugin.savePortalsData();
@@ -58,8 +58,8 @@ public class CommandBPortals implements CommandExecutor {
                 if (blocks != null) {
                     int count = 0;
                     for (String block : blocks) {
-                        if (plugin.portalData.containsKey(block)) {
-                            plugin.portalData.remove(block);
+                        if (plugin.getPortalData().containsKey(block)) {
+                            plugin.getPortalData().remove(block);
                             count++;
                         }
                     }
@@ -82,7 +82,7 @@ public class CommandBPortals implements CommandExecutor {
     }
 
     private List<String> select(Player player, String args) {
-        Selection selection = plugin.worldEdit.getSelection(player);
+        Selection selection = plugin.getWorldEdit().getSelection(player);
         if (selection == null) {
             player.sendMessage(ChatColor.RED + "You have to first create a WorldEdit selection!");
             return null;

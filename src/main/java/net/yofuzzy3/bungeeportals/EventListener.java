@@ -32,7 +32,7 @@ public class EventListener implements Listener {
         long diff = ((System.currentTimeMillis() - cooldown.get(player)) / 1000);
         if (diff < delay) {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.configFile.getString("CooldownMessage")
+                    plugin.getConfigFile().getString("CooldownMessage")
                             .replace("{destination}", String.valueOf(delay - diff))));
             return true;
         }
@@ -54,13 +54,17 @@ public class EventListener implements Listener {
 
         Block block = player.getWorld().getBlockAt(player.getLocation());
         String data = block.getWorld().getName() + "#" + block.getX() + "#" + block.getY() + "#" + block.getZ();
-        if (!plugin.portalData.containsKey(data)) {
+        if (!plugin.getPortalData().containsKey(data)) {
             return;
         }
 
-        String destination = plugin.portalData.get(data);
+        String destination = plugin.getPortalData().get(data);
         if (player.hasPermission("bungeeportals.portal." + destination)
                 && !player.hasPermission("bungeeportals.portal.deny." + destination)) {
+            if(plugin.getConfigFile().getBoolean("AuthMeHook") && !plugin.getAuthMe().isAuthenticated(player)) {
+                return;
+            }
+
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(bout);
             out.writeUTF("Connect");
@@ -71,7 +75,7 @@ public class EventListener implements Listener {
             cooldown.put(player, System.currentTimeMillis());
         } else {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.configFile.getString("NoPortalPermissionMessage")
+                    plugin.getConfigFile().getString("NoPortalPermissionMessage")
                             .replace("{destination}", destination)));
         }
 

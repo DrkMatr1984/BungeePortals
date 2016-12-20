@@ -23,12 +23,28 @@ public class BungeePortals extends JavaPlugin {
     private Logger logger;
 
     // Hooks
-    public WorldEditPlugin worldEdit;
-    public NewAPI authMe;
+    private WorldEditPlugin worldEdit;
+    private NewAPI authMe;
 
-    public Map<String, String> portalData;
-    public FileConfiguration configFile;
-    public YamlConfiguration portalsFile;
+    private Map<String, String> portalData;
+    private FileConfiguration configFile;
+    private YamlConfiguration portalsFile;
+
+    public WorldEditPlugin getWorldEdit() {
+        return worldEdit;
+    }
+
+    public NewAPI getAuthMe() {
+        return authMe;
+    }
+
+    public Map<String, String> getPortalData() {
+        return portalData;
+    }
+
+    public FileConfiguration getConfigFile() {
+        return configFile;
+    }
 
     @Override
     public void onEnable() {
