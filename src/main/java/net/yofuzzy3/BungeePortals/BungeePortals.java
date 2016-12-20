@@ -1,4 +1,12 @@
-package net.yofuzzy3.BungeePortals;
+package net.yofuzzy3.bungeeportals;
+
+import com.sk89q.worldedit.bukkit.WorldEditPlugin;
+import fr.xephi.authme.api.NewAPI;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.mcstats.MetricsLite;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -8,63 +16,63 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
-
-import net.yofuzzy3.BungeePortals.Commands.CommandBPortals;
-import net.yofuzzy3.BungeePortals.Listeners.EventListener;
-import net.yofuzzy3.BungeePortals.Tasks.SaveTask;
-
-import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 
 public class BungeePortals extends JavaPlugin {
 
-    private Logger logger = Bukkit.getLogger();
-    public Map<String, String> portalData = new HashMap<>();
+    private Logger logger;
+
+    // Hooks
     public WorldEditPlugin worldEdit;
-    public YamlConfiguration configFile;
+    public NewAPI authMe;
+
+    public Map<String, String> portalData;
+    public FileConfiguration configFile;
     public YamlConfiguration portalsFile;
 
+    @Override
     public void onEnable() {
-        long time = System.currentTimeMillis();
-        if (getServer().getPluginManager().getPlugin("WorldEdit") == null) {
-            getPluginLoader().disablePlugin(this);
-            throw new NullPointerException("[BungeePortals] WorldEdit not found, disabling...");
+        logger = getLogger();
+
+        PluginManager pluginManager = getServer().getPluginManager();
+        if (pluginManager.getPlugin("WorldEdit") == null) {
+            setEnabled(false);
+            logger.severe("WorldEdit not found, disabling...");
+            return;
         }
         worldEdit = (WorldEditPlugin) getServer().getPluginManager().getPlugin("WorldEdit");
-        startMetrics();
-        getCommand("BPortals").setExecutor(new CommandBPortals(this));
-        logger.log(Level.INFO, "[BungeePortals] Commands registered!");
-        getServer().getPluginManager().registerEvents(new EventListener(this), this);
-        logger.log(Level.INFO, "[BungeePortals] Events registered!");
-        getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-        logger.log(Level.INFO, "[BungeePortals] Plugin channel registered!");
+
+        // Load config and portals data
         loadConfigFiles();
+        portalData = new HashMap<>();
         loadPortalsData();
-        int interval = configFile.getInt("SaveTask.Interval") * 20;
-        new SaveTask(this).runTaskTimer(this, interval, interval);
-        logger.log(Level.INFO, "[BungeePortals] Save task started!");
-        logger.log(Level.INFO, "[BungeePortals] Version " + getDescription().getVersion() + " has been enabled. (" + (System.currentTimeMillis() - time) + "ms)");
-    }
 
-    public void onDisable() {
-        long time = System.currentTimeMillis();
-        savePortalsData();
-        logger.log(Level.INFO, "[BungeePortals] Version " + getDescription().getVersion() + " has been disabled. (" + (System.currentTimeMillis() - time) + "ms)");
-    }
+        // AuthMe hook
+        if (configFile.getBoolean("AuthMeHook") && pluginManager.isPluginEnabled("AuthMe")) {
+            logger.info("Found AuthMe, trying to hook...");
+            try {
+                authMe = NewAPI.getInstance();
+                logger.info("Hooked into AuthMe!");
+            } catch (Exception e) {
+                logger.warning("Unable to hook into AuthMe, maybe unsupported version?");
+            }
+        }
 
-    private void startMetrics() {
+        // Start metrics
         try {
-            MetricsLite metrics = new MetricsLite(this);
-            metrics.start();
-            logger.log(Level.INFO, "[BungeePortals] Metrics initiated!");
+            new MetricsLite(this).start();
+            logger.info("Metrics initiated!");
         } catch (IOException e) {
+            logger.warning("Unable to initiate metrics.");
             e.printStackTrace();
         }
+
+        // Register command, listeners and plugin channel
+        getCommand("BPortals").setExecutor(new CommandBPortals(this));
+        pluginManager.registerEvents(new EventListener(this), this);
+        getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+
+        logger.info("Version " + getDescription().getVersion() + " has been enabled.");
     }
 
     private void createConfigFile(InputStream in, File file) {
@@ -83,48 +91,42 @@ public class BungeePortals extends JavaPlugin {
     }
 
     public void loadConfigFiles() {
-        File cFile = new File(getDataFolder(), "config.yml");
-        if (!cFile.exists()) {
-            cFile.getParentFile().mkdirs();
-            createConfigFile(getResource("config.yml"), cFile);
-            logger.log(Level.INFO, "[BungeePortals] Configuration file config.yml created!");
+        // Config file
+        saveDefaultConfig();
+        configFile = getConfig();
+        logger.info("Configuration file loaded!");
+        // Portal data file
+        File portalFile = new File(getDataFolder(), "portals.yml");
+        if (!portalFile.exists()) {
+            createConfigFile(getResource("portals.yml"), portalFile);
         }
-        configFile = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "config.yml"));
-        logger.log(Level.INFO, "[BungeePortals] Configuration file config.yml loaded!");
-        File pFile = new File(getDataFolder(), "portals.yml");
-        if (!pFile.exists()) {
-            pFile.getParentFile().mkdirs();
-            createConfigFile(getResource("portals.yml"), pFile);
-            logger.log(Level.INFO, "[BungeePortals] Configuration file portals.yml created!");
-        }
-        portalsFile = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "portals.yml"));
-        logger.log(Level.INFO, "[BungeePortals] Configuration file portals.yml loaded!");
+        portalsFile = YamlConfiguration.loadConfiguration(portalFile);
+        logger.info("Portal data file loaded!");
     }
 
     public void loadPortalsData() {
         try {
-            long time = System.currentTimeMillis();
             for (String key : portalsFile.getKeys(false)) {
                 String value = portalsFile.getString(key);
                 portalData.put(key, value);
             }
-            logger.log(Level.INFO, "[BungeePortals] Portal data loaded! (" + (System.currentTimeMillis() - time) + "ms)");
-        } catch (NullPointerException e) {
-
+            logger.info("Portal data loaded!");
+        } catch (Exception e) {
+            logger.warning("Unable to load portal data!");
+            e.printStackTrace();
         }
     }
 
     public void savePortalsData() {
-        long time = System.currentTimeMillis();
         for (Entry<String, String> entry : portalData.entrySet()) {
             portalsFile.set(entry.getKey(), entry.getValue());
         }
         try {
             portalsFile.save(new File(getDataFolder(), "portals.yml"));
-        } catch (IOException e) {
+            logger.info("Portal data saved!");
+        } catch (Exception e) {
+            logger.warning("Unable to save portal data!");
             e.printStackTrace();
         }
-        logger.log(Level.INFO, "[BungeePortals] Portal data saved! (" + (System.currentTimeMillis() - time) + "ms)");
     }
-
 }
