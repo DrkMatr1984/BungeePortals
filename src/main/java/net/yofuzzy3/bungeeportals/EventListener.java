@@ -33,7 +33,7 @@ public class EventListener implements Listener {
         if (diff < delay) {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
                     plugin.getConfigFile().getString("CooldownMessage")
-                            .replace("{destination}", String.valueOf(delay - diff))));
+                            .replace("{time}", String.valueOf(delay - diff))));
             return true;
         }
         return false;
