@@ -1,12 +1,11 @@
 package net.yofuzzy3.bungeeportals;
 
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-import fr.xephi.authme.api.NewAPI;
+import fr.xephi.authme.api.v3.AuthMeApi;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.mcstats.MetricsLite;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,7 +23,7 @@ public class BungeePortals extends JavaPlugin {
 
     // Hooks
     private WorldEditPlugin worldEdit;
-    private NewAPI authMe;
+    private AuthMeApi authMe;
 
     private Map<String, String> portalData;
     private FileConfiguration configFile;
@@ -34,7 +33,7 @@ public class BungeePortals extends JavaPlugin {
         return worldEdit;
     }
 
-    public NewAPI getAuthMe() {
+    public AuthMeApi getAuthMe() {
         return authMe;
     }
 
@@ -67,20 +66,11 @@ public class BungeePortals extends JavaPlugin {
         if (configFile.getBoolean("AuthMeHook") && pluginManager.isPluginEnabled("AuthMe")) {
             logger.info("Found AuthMe, trying to hook...");
             try {
-                authMe = NewAPI.getInstance();
+                authMe = AuthMeApi.getInstance();
                 logger.info("Hooked into AuthMe!");
             } catch (Exception e) {
                 logger.warning("Unable to hook into AuthMe, maybe unsupported version?");
             }
-        }
-
-        // Start metrics
-        try {
-            new MetricsLite(this).start();
-            logger.info("Metrics initiated!");
-        } catch (IOException e) {
-            logger.warning("Unable to initiate metrics.");
-            e.printStackTrace();
         }
 
         // Register command, listeners and plugin channel

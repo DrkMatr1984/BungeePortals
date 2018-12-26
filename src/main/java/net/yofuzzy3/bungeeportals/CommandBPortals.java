@@ -1,7 +1,13 @@
 package net.yofuzzy3.bungeeportals;
 
-import com.sk89q.worldedit.bukkit.selections.CuboidSelection;
-import com.sk89q.worldedit.bukkit.selections.Selection;
+import com.sk89q.worldedit.LocalSession;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldedit.world.World;
+import com.sk89q.worldedit.IncompleteRegionException;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -13,6 +19,7 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 
 public class CommandBPortals implements CommandExecutor {
 
@@ -82,27 +89,43 @@ public class CommandBPortals implements CommandExecutor {
     }
 
     private List<String> select(Player player, String args) {
-        Selection selection = plugin.getWorldEdit().getSelection(player);
+
+        LocalSession userSession = plugin.getWorldEdit().getSession(player);
+        World world = BukkitAdapter.adapt(player.getWorld());
+        Region selection;
+
+        try {
+            if (userSession != null && userSession.getRegionSelector(world).isDefined()) {
+                selection = userSession.getSelection(world);
+            } else {
+                player.sendMessage(ChatColor.RED + "You have to first create a WorldEdit selection!");
+                return null;
+            }
+        } catch (IncompleteRegionException ex) {
+            player.sendMessage(ChatColor.RED + "You have to first create a WorldEdit selection!");
+            return null;
+        }
+
         if (selection == null) {
             player.sendMessage(ChatColor.RED + "You have to first create a WorldEdit selection!");
             return null;
         }
-        if (!(selection instanceof CuboidSelection)) {
+        if (!(selection instanceof CuboidRegion)) {
             player.sendMessage(ChatColor.RED + "Must be a cuboid selection!");
             return null;
         }
-        List<Location> locations = getLocationsFromCuboid((CuboidSelection) selection);
+        List<Location> locations = getLocationsFromCuboid(selection);
 
         List<String> filterIds = new ArrayList<>();
         if (args != null) {
             filterIds = Arrays.asList(args.split(","));
+            filterIds.replaceAll(String::toUpperCase);
         }
 
         List<String> blocks = new ArrayList<>();
         for (Location location : locations) {
             Block block = player.getWorld().getBlockAt(location);
-            if(!filterIds.contains(String.valueOf(block.getTypeId()))
-                    && !filterIds.contains(block.getTypeId() + ":" + block.getData())
+            if(!filterIds.contains(String.valueOf(block.getType().name()))
                     && !filterIds.contains(block.getType().name())) {
                 continue;
             }
@@ -113,14 +136,14 @@ public class CommandBPortals implements CommandExecutor {
     }
 
     // TODO: Move to utils
-    private List<Location> getLocationsFromCuboid(CuboidSelection cuboid) {
+    private List<Location> getLocationsFromCuboid(Region cuboid) {
         List<Location> locations = new ArrayList<>();
-        Location minLocation = cuboid.getMinimumPoint();
-        Location maxLocation = cuboid.getMaximumPoint();
-        for (int i1 = minLocation.getBlockX(); i1 <= maxLocation.getBlockX(); i1++) {
-            for (int i2 = minLocation.getBlockY(); i2 <= maxLocation.getBlockY(); i2++) {
-                for (int i3 = minLocation.getBlockZ(); i3 <= maxLocation.getBlockZ(); i3++) {
-                    locations.add(new Location(cuboid.getWorld(), i1, i2, i3));
+        BlockVector3 minLoc = cuboid.getMinimumPoint();
+        BlockVector3 maxLoc = cuboid.getMaximumPoint();
+        for (int i1 = minLoc.getBlockX(); i1 <= maxLoc.getBlockX(); i1++) {
+            for (int i2 = minLoc.getBlockY(); i2 <= maxLoc.getBlockY(); i2++) {
+                for (int i3 = minLoc.getBlockZ(); i3 <= maxLoc.getBlockZ(); i3++) {
+                    locations.add(new Location(BukkitAdapter.adapt(cuboid.getWorld()), i1, i2, i3));
                 }
             }
         }
