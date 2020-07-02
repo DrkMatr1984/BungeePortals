@@ -18,6 +18,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import net.yofuzzy3.BungeePortals.Commands.CommandBPortals;
 import net.yofuzzy3.BungeePortals.Listeners.EventListener;
 import net.yofuzzy3.BungeePortals.Tasks.SaveTask;
+import org.bstats.bukkit.Metrics;
 
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 
@@ -58,13 +59,9 @@ public class BungeePortals extends JavaPlugin {
     }
 
     private void startMetrics() {
-        try {
-            MetricsLite metrics = new MetricsLite(this);
-            metrics.start();
-            logger.log(Level.INFO, "[BungeePortals] Metrics initiated!");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        int pluginId = 8044;
+        Metrics metrics = new Metrics(this, pluginId);
+        logger.log(Level.INFO, "[BungeePortals] Metrics initiated!");
     }
 
     private void createConfigFile(InputStream in, File file) {
