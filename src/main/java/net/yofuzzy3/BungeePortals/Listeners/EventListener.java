@@ -5,8 +5,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 import net.yofuzzy3.BungeePortals.BungeePortals;
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -36,14 +38,29 @@ public class EventListener implements Listener {
             if (!statusData.get(playerName)) {
                 statusData.put(playerName, true);
                 String destination = plugin.portalData.get(data);
+
+                Location to = event.getFrom().clone();
+                if (to.isWorldLoaded()) {
+                    to.setX(to.getBlockX());
+                    to.setZ(to.getBlockZ());
+                    to.setYaw(to.getYaw() + 180F);
+                    event.setTo(to);
+                }
+
                 if (player.hasPermission("BungeePortals.portal." + destination) || player.hasPermission("BungeePortals.portal.*")) {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    DataOutputStream dos = new DataOutputStream(baos);
-                    dos.writeUTF("Connect");
-                    dos.writeUTF(destination);
-                    player.sendPluginMessage(plugin, "BungeeCord", baos.toByteArray());
-                    baos.close();
-                    dos.close();
+                    plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                        try {
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            DataOutputStream dos = new DataOutputStream(baos);
+                            dos.writeUTF("Connect");
+                            dos.writeUTF(destination);
+                            player.sendPluginMessage(plugin, "BungeeCord", baos.toByteArray());
+                            baos.close();
+                            dos.close();
+                        } catch (IOException e) {
+                            plugin.getLogger().log(Level.SEVERE, "Could nto connect " + playerName + " to " + destination, e);
+                        }
+                    }, 1L);
                 } else {
                     player.sendMessage(plugin.configFile.getString("NoPortalPermissionMessage").replace("{destination}", destination).replaceAll("(&([a-f0-9l-or]))", "\u00A7$2"));
                 }
