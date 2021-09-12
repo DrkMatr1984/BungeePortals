@@ -54,7 +54,7 @@ public class BungeePortals extends JavaPlugin {
 
     public void onDisable() {
         long time = System.currentTimeMillis();
-        savePortalsData();
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> savePortalsData(portalsFile, portalData));
         logger.log(Level.INFO, "[BungeePortals] Version " + getDescription().getVersion() + " has been disabled. (" + (System.currentTimeMillis() - time) + "ms)");
     }
 
@@ -111,8 +111,7 @@ public class BungeePortals extends JavaPlugin {
         }
     }
 
-    public void savePortalsData() {
-        long time = System.currentTimeMillis();
+    public void savePortalsData(YamlConfiguration portalsFile, Map<String, String> portalData) {
         for (Entry<String, String> entry : portalData.entrySet()) {
             portalsFile.set(entry.getKey(), entry.getValue());
         }
@@ -121,7 +120,6 @@ public class BungeePortals extends JavaPlugin {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        logger.log(Level.INFO, "[BungeePortals] Portal data saved! (" + (System.currentTimeMillis() - time) + "ms)");
     }
 
 }

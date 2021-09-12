@@ -50,7 +50,7 @@ public class CommandBPortals implements CommandExecutor {
                         plugin.loadPortalsData();
                         sender.sendMessage(ChatColor.GREEN + "All configuration files and data have been reloaded.");
                     } else if (args[0].equalsIgnoreCase("forcesave")) {
-                        plugin.savePortalsData();
+                        plugin.savePortalsData(plugin.portalsFile, plugin.portalData);
                         sender.sendMessage(ChatColor.GREEN + "Portal data saved!");
                     } else if (args[0].equalsIgnoreCase("clear")) {
                         if (sender instanceof Player) {
