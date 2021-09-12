@@ -1,6 +1,8 @@
 package net.yofuzzy3.BungeePortals.Tasks;
 
 import net.yofuzzy3.BungeePortals.BungeePortals;
+
+import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class SaveTask extends BukkitRunnable {
@@ -13,7 +15,7 @@ public class SaveTask extends BukkitRunnable {
 
     public void run() {
         if (plugin.configFile.getBoolean("SaveTask.Enabled")) {
-            plugin.savePortalsData();
+        	Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.savePortalsData());
         }
     }
 
