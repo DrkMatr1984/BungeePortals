@@ -54,7 +54,7 @@ public class BungeePortals extends JavaPlugin {
 
     public void onDisable() {
         long time = System.currentTimeMillis();
-        Bukkit.getScheduler().runTaskAsynchronously(this, () -> savePortalsData(portalsFile, portalData));
+        savePortalsData(portalsFile, portalData);
         logger.log(Level.INFO, "[BungeePortals] Version " + getDescription().getVersion() + " has been disabled. (" + (System.currentTimeMillis() - time) + "ms)");
     }
 
